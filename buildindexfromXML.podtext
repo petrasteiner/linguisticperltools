@@ -1,0 +1,133 @@
+NAME
+    <buildindexfromXML.pl> takes XML file(s) and produces files with
+    segmentation of texts, paragraphs, sentences, tokens
+
+VERSION
+    Draft Version
+
+SYNOPSIS
+    A - Preprocessing - takes XML file (flag -i InputFilename) or a
+    directory with XML files (flag -d InputDir/). The outputfile name is
+    automatically created. - removes XML tags starting from tag
+    <$textstring>, e.g. "document" and enumerates texts and paragraphs.
+    Output in Filename.sen . - invokes a tokenizer (augmented Tokenizer of
+    Dipper) with a list of abbreviations. Output in Filename.tok . - finds
+    multiword entities by a list of multiwordlexemes (flag -m MWLFilename).
+    Output in Filename.tokmwl . - repairs words with special characters,
+    e.g. Eckventil(e). Flag -r, output in Filename.tokrmwl . - if
+    Filename.tokmwl exists, you can start with the repair by flag -swr. -
+    creates a file of the format
+    textnumber#paragraphnumber#sentencenumber#wordnumber#token\n . Output in
+    Filename.tokwot - if Filename.tokrmwl exists, you can start with
+    creating Filename.tokwot by flag -ji.
+
+    B - Generation of indices - in default mode, for the sake of speed, a
+    mix of shell, awk and perl commands are invoked. - if you prefer or have
+    to skip this mode, choose flag -no. Caution: for big data, this can be
+    extremely time-consuming.
+
+    For the tokenised corpus in Filename.tokwot - builds inverted index,
+    output in Filename_invertedtextindex.out - sorts/uniqs this, output in
+    Filename_invertedtextindexintermediate.out, then delete beginning
+    whitespaces of this file - changes and formats the columns, output in
+    Filename Filename_invertedtextindexsorted.out - creates the general text
+    index of the format Token/tTextno#Textno[...], output in
+    Filename_invertedgeneralindex.out
+
+    If chosen to build the indexes for each text of the TOKENIZED file (flag
+    -bi) - creates a subdirectory Tokenscorpus, copies Filename_tokwot into
+    it and creates for each text a file (name FILENO) with tokens
+
+    If chosen to build the indexes for each text of the LEMMATIZED file
+    (flag -blif Filename.lemmas) - you need a file with the lemmatized
+    corpus of the format
+    textnumber#paragraphnumber#sentencenumber#wordnumber#token\n . You could
+    create it with the treetagger or other programs: Inputfilename:
+    Filename.lemmas - creates a subdirectory Lemmascorpus, copies
+    Filename_lemmas into it and creates for each text a file (name FILENO)
+    with tokens - for the further processing, the program - builds inverted
+    index, output in Filename.lemmas_invertedtextindex.out - sorts/uniqs
+    this, output in Filename.lemmas_invertedtextindexintermediate.out, then
+    delete beginning whitespaces of this file - changes and formats the
+    columns, output in Filename Filename.lemmas_invertedtextindexsorted.out
+    - processes ambiguous lemmatization, e.g. Zweifel|Zweifeln, by creating
+    two entries, outputfile:
+    Filename.lemmas_invertedtextindexsorted.out_repaired - creates the
+    general text index of the format Lemma/tTextno#Textno[...], output in
+    Filename.lemmas_invertedgeneralindex.out
+
+    If chosen to build the MERGED indexes for each text of the tokenized and
+    the lemmatized files (flag -merge Filename.lemmas) - you need a file
+    with the lemmatized corpus of the format
+    textnumber#paragraphnumber#sentencenumber#wordnumber#token\n, e.g.
+    Filename.lemmas . - the indexes for each text must exist
+    (subdirectories: Tokenscorpus, create by flag -bi; Lemmascorpus: create
+    by flag -blif) - creates a subdirectory Mergedcorpus and creates for
+    each text a file (name FILENO) with tokens and lemmas - for the further
+    processing, the program uses Filename.lemmas (same as for blif) as
+    basename, and - creates the general text index of the format
+    LemmaorToken/tTextno#Textno[...] by appending and resorting the general
+    text index of Filename_invertedgeneralindex.out and
+    Filename.lemmas_invertedgeneralindex.out. Intermediate files:
+    Filename_invertedgeneralindexintermediatelemmasandtokens.out and
+    Filename_invertedgeneralindexmergeddoubles.out Output in
+    Filename_invertedgeneralindexmerged.out
+
+CALLS:
+    COMPLETE nohup perl buildindexfromXML.pl -m multiwordlexemes -r -bi
+    -merge wpd15.i5.xml.lemmas -blif wpd15.i5.xml.lemmas -i wpd15.i5.xml -ts
+    idsCorpus/idsDoc/idsText > out1008 &
+
+    WITHOUT generating lemmatized and merged indices nohup perl
+    buildindexfromXML.pl -m multiwordlexemes -r -bi -i wpd15.i5.xml -ts
+    idsCorpus/idsDoc/idsText > outputfile &
+
+    START with repair nohup perl buildindexfromXML.pl -swr -r -swr -bi
+    -merge wpd15.i5.xml.lemmas -blif wpd15.i5.xml.lemmas -i wpd15.i5.xml -ts
+    idsCorpus/idsDoc/idsText > out1008 &
+
+    START with repair nohup perl buildindexfromXML.pl -r -swr -bi -merge
+    subcorpus_10_document_1.xml.lemmas -blif
+    subcorpus_10_document_1.xml.lemmas -d Boschfiles/ > out0808 &
+
+    START with Index # nohup perl buildindexfromXML.pl -ji -bi -merge
+    wpd.i5.xml.lemmas -blif wpd.i5.xml.lemmas -i wpd.i5.xml > out1008 &
+
+OPTIONS
+    see buildindexfromXML.pl -h
+
+DIRECT SUBROUTINES
+  process_text_with_twig
+    iterates through huge XML data and prints out (relatively) clean code.
+    Counts texts and paragraphs, one sentence per line
+
+find_mwl
+    looks for multiword items and also for words which have multiword items
+    as a part
+
+  repair_quotesetc
+    repair words with quotes, parentheses and multi-word units as first
+    parts
+
+  buildindices
+    takes a file of the format TeXTNR#1#1#1#token\n for each text it creates
+    a file with the frequency counts in it and stores the file TEXTNR in
+    $pathcorpus
+
+  repairdoublelemmas
+    repair entries with ambiguous lemma information, e.g.
+    "Bohnenspross|Bohnensprosse 1049175 1" create a new entry for each
+    analysis
+
+  mergeindices
+    Takes two directories: 1 with files with tokens, 2 with files with
+    lemmas (format: Token/Lemma#freq) and creates a synopsis for each pair
+    of file in /Mergedcorpus
+
+  remove_duplicates_insecondcol
+    For every tab-segmented line with two columns, this sorts and unifies
+    the entries of the second column (delimiter #)
+
+COPYRIGHT
+    Distribution only by Petra Steiner
+

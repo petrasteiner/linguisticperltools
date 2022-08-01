@@ -1,0 +1,114 @@
+<?xml version="1.0" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title></title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rev="made" href="mailto:root@localhost" />
+</head>
+
+<body>
+
+
+
+<ul id="index">
+  <li><a href="#NAME">NAME</a></li>
+  <li><a href="#VERSION">VERSION</a></li>
+  <li><a href="#SYNOPSIS">SYNOPSIS</a></li>
+  <li><a href="#CALLS">CALLS:</a></li>
+  <li><a href="#OPTIONS">OPTIONS</a></li>
+  <li><a href="#DIRECT-SUBROUTINES">DIRECT SUBROUTINES</a>
+    <ul>
+      <li><a href="#process_text_with_twig">process_text_with_twig</a></li>
+    </ul>
+  </li>
+  <li><a href="#find_mwl">find_mwl</a>
+    <ul>
+      <li><a href="#repair_quotesetc">repair_quotesetc</a></li>
+      <li><a href="#buildindices">buildindices</a></li>
+      <li><a href="#repairdoublelemmas">repairdoublelemmas</a></li>
+      <li><a href="#mergeindices">mergeindices</a></li>
+      <li><a href="#remove_duplicates_insecondcol">remove_duplicates_insecondcol</a></li>
+    </ul>
+  </li>
+  <li><a href="#COPYRIGHT">COPYRIGHT</a></li>
+</ul>
+
+<h1 id="NAME">NAME</h1>
+
+<p>&lt;buildindexfromXML.pl&gt; takes XML file(s) and produces files with segmentation of texts, paragraphs, sentences, tokens</p>
+
+<h1 id="VERSION">VERSION</h1>
+
+<p>Draft Version</p>
+
+<h1 id="SYNOPSIS">SYNOPSIS</h1>
+
+<p>A - Preprocessing - takes XML file (flag -i InputFilename) or a directory with XML files (flag -d InputDir/). The outputfile name is automatically created. - removes XML tags starting from tag &lt;$textstring&gt;, e.g. &quot;document&quot; and enumerates texts and paragraphs. Output in Filename.sen . - invokes a tokenizer (augmented Tokenizer of Dipper) with a list of abbreviations. Output in Filename.tok . - finds multiword entities by a list of multiwordlexemes (flag -m MWLFilename). Output in Filename.tokmwl . - repairs words with special characters, e.g. Eckventil(e). Flag -r, output in Filename.tokrmwl . - if Filename.tokmwl exists, you can start with the repair by flag -swr. - creates a file of the format textnumber#paragraphnumber#sentencenumber#wordnumber#token\n . Output in Filename.tokwot - if Filename.tokrmwl exists, you can start with creating Filename.tokwot by flag -ji.</p>
+
+<p>B - Generation of indices - in default mode, for the sake of speed, a mix of shell, awk and perl commands are invoked. - if you prefer or have to skip this mode, choose flag -no. Caution: for big data, this can be extremely time-consuming.</p>
+
+<p>For the tokenised corpus in Filename.tokwot - builds inverted index, output in Filename_invertedtextindex.out - sorts/uniqs this, output in Filename_invertedtextindexintermediate.out, then delete beginning whitespaces of this file - changes and formats the columns, output in Filename Filename_invertedtextindexsorted.out - creates the general text index of the format Token/tTextno#Textno[...], output in Filename_invertedgeneralindex.out</p>
+
+<p>If chosen to build the indexes for each text of the TOKENIZED file (flag -bi) - creates a subdirectory Tokenscorpus, copies Filename_tokwot into it and creates for each text a file (name FILENO) with tokens</p>
+
+<p>If chosen to build the indexes for each text of the LEMMATIZED file (flag -blif Filename.lemmas) - you need a file with the lemmatized corpus of the format textnumber#paragraphnumber#sentencenumber#wordnumber#token\n . You could create it with the treetagger or other programs: Inputfilename: Filename.lemmas - creates a subdirectory Lemmascorpus, copies Filename_lemmas into it and creates for each text a file (name FILENO) with tokens - for the further processing, the program - builds inverted index, output in Filename.lemmas_invertedtextindex.out - sorts/uniqs this, output in Filename.lemmas_invertedtextindexintermediate.out, then delete beginning whitespaces of this file - changes and formats the columns, output in Filename Filename.lemmas_invertedtextindexsorted.out - processes ambiguous lemmatization, e.g. Zweifel|Zweifeln, by creating two entries, outputfile: Filename.lemmas_invertedtextindexsorted.out_repaired - creates the general text index of the format Lemma/tTextno#Textno[...], output in Filename.lemmas_invertedgeneralindex.out</p>
+
+<p>If chosen to build the MERGED indexes for each text of the tokenized and the lemmatized files (flag -merge Filename.lemmas) - you need a file with the lemmatized corpus of the format textnumber#paragraphnumber#sentencenumber#wordnumber#token\n, e.g. Filename.lemmas . - the indexes for each text must exist (subdirectories: Tokenscorpus, create by flag -bi; Lemmascorpus: create by flag -blif) - creates a subdirectory Mergedcorpus and creates for each text a file (name FILENO) with tokens and lemmas - for the further processing, the program uses Filename.lemmas (same as for blif) as basename, and - creates the general text index of the format LemmaorToken/tTextno#Textno[...] by appending and resorting the general text index of Filename_invertedgeneralindex.out and Filename.lemmas_invertedgeneralindex.out. Intermediate files: Filename_invertedgeneralindexintermediatelemmasandtokens.out and Filename_invertedgeneralindexmergeddoubles.out Output in Filename_invertedgeneralindexmerged.out</p>
+
+<h1 id="CALLS">CALLS:</h1>
+
+<p>COMPLETE nohup perl buildindexfromXML.pl -m multiwordlexemes -r -bi -merge wpd15.i5.xml.lemmas -blif wpd15.i5.xml.lemmas -i wpd15.i5.xml -ts idsCorpus/idsDoc/idsText &gt; out1008 &amp;</p>
+
+<p>WITHOUT generating lemmatized and merged indices nohup perl buildindexfromXML.pl -m multiwordlexemes -r -bi -i wpd15.i5.xml -ts idsCorpus/idsDoc/idsText &gt; outputfile &amp;</p>
+
+<p>START with repair nohup perl buildindexfromXML.pl -swr -r -swr -bi -merge wpd15.i5.xml.lemmas -blif wpd15.i5.xml.lemmas -i wpd15.i5.xml -ts idsCorpus/idsDoc/idsText &gt; out1008 &amp;</p>
+
+<p>START with repair nohup perl buildindexfromXML.pl -r -swr -bi -merge subcorpus_10_document_1.xml.lemmas -blif subcorpus_10_document_1.xml.lemmas -d Boschfiles/ &gt; out0808 &amp;</p>
+
+<p>START with Index # nohup perl buildindexfromXML.pl -ji -bi -merge wpd.i5.xml.lemmas -blif wpd.i5.xml.lemmas -i wpd.i5.xml &gt; out1008 &amp;</p>
+
+<h1 id="OPTIONS">OPTIONS</h1>
+
+<p>see buildindexfromXML.pl -h</p>
+
+<h1 id="DIRECT-SUBROUTINES">DIRECT SUBROUTINES</h1>
+
+<h2 id="process_text_with_twig">process_text_with_twig</h2>
+
+<p>iterates through huge XML data and prints out (relatively) clean code. Counts texts and paragraphs, one sentence per line</p>
+
+<h1 id="find_mwl">find_mwl</h1>
+
+<p>looks for multiword items and also for words which have multiword items as a part</p>
+
+<h2 id="repair_quotesetc">repair_quotesetc</h2>
+
+<p>repair words with quotes, parentheses and multi-word units as first parts</p>
+
+<h2 id="buildindices">buildindices</h2>
+
+<p>takes a file of the format TeXTNR#1#1#1#token\n for each text it creates a file with the frequency counts in it and stores the file TEXTNR in $pathcorpus</p>
+
+<h2 id="repairdoublelemmas">repairdoublelemmas</h2>
+
+<p>repair entries with ambiguous lemma information, e.g. &quot;Bohnenspross|Bohnensprosse 1049175 1&quot; create a new entry for each analysis</p>
+
+<h2 id="mergeindices">mergeindices</h2>
+
+<p>Takes two directories: 1 with files with tokens, 2 with files with lemmas (format: Token/Lemma#freq) and creates a synopsis for each pair of file in /Mergedcorpus</p>
+
+<h2 id="remove_duplicates_insecondcol">remove_duplicates_insecondcol</h2>
+
+<p>For every tab-segmented line with two columns, this sorts and unifies the entries of the second column (delimiter #)</p>
+
+<h1 id="COPYRIGHT">COPYRIGHT</h1>
+
+<p>Distribution only by Petra Steiner</p>
+
+
+</body>
+
+</html>
+
+
