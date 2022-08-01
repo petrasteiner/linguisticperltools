@@ -1,6 +1,6 @@
 # linguisticperltools
 This repository will finally comprise some of the tools and pipelines I created mainly during the period of 2014-2018, some of them revised. 
-I used the Dipper tokenizer which I modified, the Treetagger for lemmatization, SMOR for morphological analyses.
+I used the Dipper tokenizer which I modified, the Treetagger for lemmatization, SMOR for morphological analyses. I modified part of SMOR code too or asked H. Schmidt for changes.
 
 The linguistic data were a Wikipedia corpus and the MLD corpus which were freely supplied from IDS (Leibniz Institut für Deutsche Sprache, Mannheim). 
 
